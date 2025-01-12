@@ -24,26 +24,24 @@ def DO_gurobi(game: np.array, epsilon: float = 1e-2, verbose: bool = False) -> n
     return double_oracle(game, epsilon, verbose, solve_sub_game_gurobi)
 
 
-def solve_sub_game_scipy(subgame: np.array, row_strategies: list, column_strategies) -> tuple:
+def solve_sub_game_scipy(subgame: np.array) -> tuple:
     """
     Solve the subgame defined by the strategy sets
     :param subgame: payoff matrix of the subgame
-    :param row_strategies: row strategy set
-    :param column_strategies: column strategy set
     :return: Nash equilibrium of the subgame
     """
 
     # create subgame matrix
     st = time.perf_counter()
-    A_ub = np.hstack((subgame, -np.ones((len(row_strategies), 1))))
-    b_ub = np.zeros(len(row_strategies))
-    A_eq = np.ones((1, len(column_strategies) + 1))
+    A_ub = np.hstack((subgame, -np.ones((subgame.shape[0], 1))))
+    b_ub = np.zeros(subgame.shape[0])
+    A_eq = np.ones((1, subgame.shape[1] + 1))
     A_eq[0, -1] = 0
     b_eq = 1
-    c = np.zeros(len(column_strategies) + 1)
+    c = np.zeros(subgame.shape[1] + 1)
     c[-1] = 1
 
-    bounds = [(0, None)] * (len(column_strategies)) + [(None, None)]
+    bounds = [(0, None)] * (subgame.shape[1]) + [(None, None)]
     res = opt.linprog(A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, c=c, bounds=bounds, method='highs')
     if res.status == 0:
         sub_game_sub_column_ne = res.x[:-1]
@@ -56,23 +54,21 @@ def solve_sub_game_scipy(subgame: np.array, row_strategies: list, column_strateg
     return sub_game_sub_row_ne, sub_game_sub_column_ne, sub_ne_value, et - st
 
 
-def solve_sub_game_gurobi(subgame: np.array, row_strategies: list, column_strategies) -> tuple:
+def solve_sub_game_gurobi(subgame: np.array) -> tuple:
     """
     Solve the subgame defined by the strategy sets
     :param subgame: payoff matrix of the subgame
-    :param row_strategies: row strategy set
-    :param column_strategies: column strategy set
     :return: Nash equilibrium of the subgame
     """
 
     st = time.perf_counter()
     # create subgame matrix
-    A_ub = np.hstack((subgame, -np.ones((len(row_strategies), 1))))
-    b_ub = np.zeros(len(row_strategies))
+    A_ub = np.hstack((subgame, -np.ones((subgame.shape[0], 1))))
+    b_ub = np.zeros(subgame.shape[0])
 
     m = gp.Model("subgame")
     m.params.LogToConsole=0
-    col_strategy_var = m.addMVar(len(column_strategies) + 1, lb=0, ub=1, vtype=GRB.CONTINUOUS, name="column_strategy")
+    col_strategy_var = m.addMVar(subgame.shape[1] + 1, lb=0, ub=1, vtype=GRB.CONTINUOUS, name="column_strategy")
     col_strategy_var[-1].lb = float("-inf")
     col_strategy_var[-1].ub = float("inf")
     cons = m.addMConstr(A_ub, col_strategy_var, GRB.LESS_EQUAL, b_ub)
@@ -80,7 +76,7 @@ def solve_sub_game_gurobi(subgame: np.array, row_strategies: list, column_strate
     # Set the probabilities to sum to 1
     #m.addConstr(col_strategy_var[:-1].sum() == 1)
     lin_exp = gurobipy.LinExpr()
-    lin_exp.addTerms([1.]*len(column_strategies), col_strategy_var[:-1].tolist())
+    lin_exp.addTerms([1.]*subgame.shape[1], col_strategy_var[:-1].tolist())
     m.addLConstr(lin_exp, GRB.EQUAL, 1)
 
     # Set the objective
@@ -134,7 +130,7 @@ def double_oracle(game: np.array, epsilon: float = 1e-5, verbose: bool = False, 
 
         # solve subgame and compute the best responses to the strategies
         subgame = game[row_strategies][:, column_strategies]
-        sub_game_sub_row_ne, sub_game_sub_column_ne, sub_ne_value, ti = solver(subgame, row_strategies, column_strategies)
+        sub_game_sub_row_ne, sub_game_sub_column_ne, sub_ne_value, ti = solver(subgame)
         t += ti
         row_best_response = np.argmax(game[:, column_strategies] @ sub_game_sub_column_ne)
         column_best_response = np.argmin(sub_game_sub_row_ne.T @ game[row_strategies])
@@ -195,7 +191,7 @@ def lp(game, solver=solve_sub_game_gurobi):
     """
     row_strategies = np.arange(0, game.shape[0]).tolist()
     column_strategies = np.arange(0, game.shape[1]).tolist()
-    row_ne, column_ne, value, _ = solver(game, row_strategies, column_strategies)
+    row_ne, column_ne, value, _ = solver(game)
     result = {
         'row_strategy': row_ne,
         'column_strategy': column_ne,
