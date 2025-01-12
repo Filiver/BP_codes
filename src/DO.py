@@ -16,19 +16,20 @@ def sub_mixed_strategy_to_mixed_strategy(game, row_strategies, column_strategies
     return sub_game_row_ne, sub_game_column_ne
 
 
-def DO_scipy(game: np.array, epsilon: float = 1e-5, verbose: bool = False) -> np.array:
+def DO_scipy(game: np.array, epsilon: float = 1e-2, verbose: bool = False) -> np.array:
     return double_oracle(game, epsilon, verbose, solve_sub_game_scipy)
 
 
-def DO_gurobi(game: np.array, epsilon: float = 1e-5, verbose: bool = False) -> np.array:
+def DO_gurobi(game: np.array, epsilon: float = 1e-2, verbose: bool = False) -> np.array:
     return double_oracle(game, epsilon, verbose, solve_sub_game_gurobi)
 
 
 def solve_sub_game_scipy(subgame: np.array, row_strategies: list, column_strategies) -> tuple:
     """
     Solve the subgame defined by the strategy sets
-    :param game: payoff matrix of the game
-    :param strategy_sets: strategy sets of the players
+    :param subgame: payoff matrix of the subgame
+    :param row_strategies: row strategy set
+    :param column_strategies: column strategy set
     :return: Nash equilibrium of the subgame
     """
 
@@ -111,6 +112,7 @@ def double_oracle(game: np.array, epsilon: float = 1e-5, verbose: bool = False, 
     :param epsilon: convergence parameter
     :param verbose: print intermediate results
     :param solver: subgame solver
+    :param visualise: whether each step should generate image visualising current state of the game
     :return: Nash equilibrium
     """
 
@@ -185,6 +187,12 @@ def double_oracle(game: np.array, epsilon: float = 1e-5, verbose: bool = False, 
 
 
 def lp(game, solver=solve_sub_game_gurobi):
+    """
+    Solve a zero-sum game using linear programming
+    :param game: utility matrix of the game
+    :param solver: solve_sub_game_gurobi or solve_sub_game_scipy
+    :return:
+    """
     row_strategies = np.arange(0, game.shape[0]).tolist()
     column_strategies = np.arange(0, game.shape[1]).tolist()
     row_ne, column_ne, value, _ = solver(game, row_strategies, column_strategies)

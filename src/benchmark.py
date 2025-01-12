@@ -12,11 +12,14 @@ from ODO import online_double_oracle
 def benchmark_game_solver(game_solving_functions, game_generation_function, game_solving_args, game_generation_args,
                           iters, iterations_stats: list[bool] = None, verbose: bool = True):
     """
-    Benchmark the game solving function
+    Benchmark the game solving functions
     :param game_solving_functions: function to solve the game
     :param game_generation_function: function to generate the game
     :param game_solving_args: arguments for the game solving function
     :param game_generation_args: arguments for the game generation function
+    :param iters: number of games to generate and solve
+    :param iterations_stats: whether to compute the iterations stats for each solver
+    :param verbose: whether to print the results
     :return: time taken to solve the game
     """
     np.random.seed(0)
@@ -156,14 +159,13 @@ def generate_gaussian_sum_game_of_size_gen(size):
             sigmas
         ).reshape(GAUSS_SIZE, GAUSS_SIZE)
 
-    while True:
-        game = np.zeros((size+2*GAUSS_SIZE, size+2*GAUSS_SIZE))
-        for _ in range(amount):
-            mu = np.random.randint(GAUSS_SIZE, size+GAUSS_SIZE, 2)
-            i = np.random.randint(0, GAUSS_NUMBER-1)
-            game[mu[0]-(GAUSS_SIZE)//2:mu[0]+GAUSS_SIZE//2, mu[1]-(GAUSS_SIZE)//2:mu[1]+GAUSS_SIZE//2] += gauss_factory[i]
-        game = game[GAUSS_SIZE:-GAUSS_SIZE, GAUSS_SIZE:-GAUSS_SIZE]
-        return game / game.max()
+    game = np.zeros((size+2*GAUSS_SIZE, size+2*GAUSS_SIZE))
+    for _ in range(amount):
+        mu = np.random.randint(GAUSS_SIZE, size+GAUSS_SIZE, 2)
+        i = np.random.randint(0, GAUSS_NUMBER-1)
+        game[mu[0]-(GAUSS_SIZE)//2:mu[0]+GAUSS_SIZE//2, mu[1]-(GAUSS_SIZE)//2:mu[1]+GAUSS_SIZE//2] += gauss_factory[i]
+    game = game[GAUSS_SIZE:-GAUSS_SIZE, GAUSS_SIZE:-GAUSS_SIZE]
+    return game / game.max()
 
 
 def generate_gaussian_sum_game_of_size(size):
@@ -173,21 +175,6 @@ def generate_gaussian_sum_game_of_size(size):
         game += generate_gaussian_game_of_size(size)
     return game / game.max()
 
-
-def load_gaussian_sum_game_of_size(size, presaved=None):
-    MAX_SIZE = 2000
-    presaved_games_files = os.listdir(os.path.join("", "tmp", f"gaussian_sum_{MAX_SIZE}"))
-    if presaved is not None:
-        if len(presaved_games_files) > presaved:
-            for i in range(presaved - len(presaved_games_files)):
-                game = generate_gaussian_sum_game_of_size(MAX_SIZE)
-                np.save(os.path.join("", "tmp", f"gaussian_sum_{MAX_SIZE}", f"game_{len(presaved_games_files) + i}"), game)
-        else:
-            game = np.load(os.path.join("", "tmp", f"gaussian_sum_{MAX_SIZE}", presaved_games_files[presaved]))
-        a, b = np.random.randint(0, MAX_SIZE - size), np.random.randint(0, MAX_SIZE - size)
-        return game[a:a + size][b:b + size]
-    else:
-        return generate_gaussian_sum_game_of_size(size)
 
 
 if __name__ == '__main__':

@@ -1,11 +1,11 @@
 import numpy as np
 from constants import *
 import random
-from MWU import compute_iterations_limit_bianchi, compute_mu
+from MWU import compute_iterations_limit_bianchi, compute_eta
 from DO import sub_mixed_strategy_to_mixed_strategy
 
 def online_double_oracle(game, epsilon: float = 1e-2, iterations_limit: int = np.inf,
-                         verbose: bool = False, save_strategies: bool = False) -> dict:
+                         verbose: bool = False) -> dict:
 
     row_strategies = [np.random.randint(0, game.shape[0])]
     column_strategies = [np.random.randint(0, game.shape[1])]
@@ -67,10 +67,9 @@ def online_double_oracle(game, epsilon: float = 1e-2, iterations_limit: int = np
             theoretical_iterations_limit = compute_iterations_limit_bianchi(k, epsilon)
             if verbose:
                 print("New theoretical iterations limit: ", theoretical_iterations_limit)
-            mu = compute_mu(k, epsilon, theoretical_iterations_limit)
+            mu = compute_eta(k, theoretical_iterations_limit)
             iterations += window_iterations
             window_iterations = 0
-            # theoretical_iterations_limit = np.ceil(k * np.log(k) / (2*epsilon ** 2))
             mu_sub_game = mu * game[row_strategies][:, column_strategies]
             minus_mu_sub_game = -mu_sub_game
 
@@ -92,8 +91,8 @@ def online_double_oracle(game, epsilon: float = 1e-2, iterations_limit: int = np
         'iterations': iterations,
         'end_condition': end_condition
     }
-    print("Iterations: ", iterations)
-    print('Theoretical iterations limit: ', theoretical_iterations_limit)
+    # print("Iterations: ", iterations)
+    # print('Theoretical iterations limit: ', theoretical_iterations_limit)
     return result
 
 

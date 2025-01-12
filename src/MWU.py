@@ -11,11 +11,11 @@ def compute_iterations_limit_freund_schapire(game_size: int, epsilon: float) -> 
 def compute_iterations_limit_bianchi(game_size: int, epsilon: float) -> int:
     return int(np.ceil(np.log(game_size) / (2 * epsilon ** 2)))
 
-def compute_mu(game_size: int, epsilon: float, iterations_limit: int) -> float:
+def compute_eta(game_size: int, iterations_limit: int) -> float:
     return np.sqrt(8 * np.log(game_size) / iterations_limit)
 
 
-def multiplicative_weights_update(game, mu: float = None, epsilon: float = 1e-2, iterations_limit: int = None,
+def multiplicative_weights_update(game, eta: float = None, epsilon: float = 1e-2, iterations_limit: int = None,
                                   save_strategies: bool = False, calc_exploitations: bool = False) -> dict:
     row_strategy = np.ones(game.shape[0])/game.shape[0]
     column_strategy = np.ones(game.shape[1])/game.shape[1]
@@ -40,11 +40,11 @@ def multiplicative_weights_update(game, mu: float = None, epsilon: float = 1e-2,
     #print(f"Theoretical iterations limit: {iterations_limit_theoretical}")
     if iterations_limit is None or iterations_limit_theoretical < iterations_limit:
         iterations_limit = iterations_limit_theoretical
-    if mu is None:
-        mu = compute_mu(max(game.shape), epsilon, iterations_limit)
+    if eta is None:
+        eta = compute_eta(max(game.shape), iterations_limit)
 
-    mu_game = mu * game
-    minus_mu_game = -mu_game
+    eta_game = eta * game
+    minus_eta_game = -eta_game
     end_condition = TerminationReasons.NotEnded
     iterations = 0
     while iterations < iterations_limit:
@@ -57,9 +57,9 @@ def multiplicative_weights_update(game, mu: float = None, epsilon: float = 1e-2,
             exploitations[0].append(row_best_response_value)
             exploitations[1].append(column_best_response_value)
 
-        new_row_strategy = row_strategy * np.exp(mu_game @ column_strategy)
+        new_row_strategy = row_strategy * np.exp(eta_game @ column_strategy)
         new_row_strategy /= np.sum(new_row_strategy)
-        new_column_strategy = column_strategy * np.exp(row_strategy @ minus_mu_game)
+        new_column_strategy = column_strategy * np.exp(row_strategy @ minus_eta_game)
         new_column_strategy /= np.sum(new_column_strategy)
 
         if save_strategies:

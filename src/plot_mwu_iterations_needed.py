@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from MWU import compute_iterations_limit_freund_schapire, compute_iterations_limit_bianchi
 
-tested_bounds = [compute_iterations_limit_freund_schapire, compute_iterations_limit_bianchi]
+tested_bounds = [compute_iterations_limit_bianchi]
 
 min_size = 100
 max_size = 5000

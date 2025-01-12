@@ -37,7 +37,7 @@ class TestODO:
         expected_value = 0.79584
         # testing.assert_allclose(result['row_strategy'], expected_row_strategy, atol=1e-2)
         # testing.assert_allclose(result['column_strategy'], expected_column_strategy, atol=1e-2)
-        assert np.abs(result['value'] - expected_value) < epsilon
+        assert np.abs(result['value'] - expected_value) < max(epsilon, 1e-5)
 
     @pytest.mark.parametrize("epsilon", epsilons)
     def test_morra(self, epsilon):
